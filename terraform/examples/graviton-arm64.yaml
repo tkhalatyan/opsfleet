@@ -1,0 +1,35 @@
+# Runs on Graviton (arm64). Karpenter launches an arm64 node (Spot if available).
+# The container image must support linux/arm64 (multi-arch or arm64-only).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-arm64
+  labels:
+    app: demo-arm64
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: demo-arm64
+  template:
+    metadata:
+      labels:
+        app: demo-arm64
+    spec:
+      nodeSelector:
+        kubernetes.io/arch: arm64
+      containers:
+        - name: app
+          image: public.ecr.aws/docker/library/busybox:stable
+          command: ["sh", "-c", "while true; do echo \"arch=$(uname -m) node=$NODE_NAME\"; sleep 30; done"]
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          resources:
+            requests:
+              cpu: 500m
+              memory: 256Mi
+            limits:
+              memory: 256Mi

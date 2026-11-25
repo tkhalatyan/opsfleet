@@ -1,0 +1,22 @@
+# Copy to terraform.tfvars and adjust. All values are optional; defaults are shown.
+
+region       = "us-east-1"
+cluster_name = "eks-karpenter-poc"
+
+# Restrict API access to your own IP / VPN range, e.g. ["203.0.113.10/32"].
+endpoint_public_access_cidrs = ["0.0.0.0/0"]
+
+# Extra cluster admins, e.g. the platform team's SSO role.
+# cluster_admin_principal_arns = ["arn:aws:iam::123456789012:role/aws-reserved/sso.amazonaws.com/AWSReservedSSO_PlatformAdmin_abc123"]
+
+# Set to true only if the account has never launched Spot instances (see README).
+create_spot_service_linked_role = false
+
+# Production-leaning settings:
+# single_nat_gateway  = false             # one NAT Gateway per AZ
+# karpenter_ami_alias = "al2023@v20261120" # pin the node AMI
+
+tags = {
+  Environment = "poc"
+  Owner       = "platform-team"
+}

@@ -1,0 +1,34 @@
+# Runs on x86 (amd64). Use this for images that are only built for linux/amd64.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-amd64
+  labels:
+    app: demo-amd64
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: demo-amd64
+  template:
+    metadata:
+      labels:
+        app: demo-amd64
+    spec:
+      nodeSelector:
+        kubernetes.io/arch: amd64
+      containers:
+        - name: app
+          image: public.ecr.aws/docker/library/busybox:stable
+          command: ["sh", "-c", "while true; do echo \"arch=$(uname -m) node=$NODE_NAME\"; sleep 30; done"]
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          resources:
+            requests:
+              cpu: 500m
+              memory: 256Mi
+            limits:
+              memory: 256Mi

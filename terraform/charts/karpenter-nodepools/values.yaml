@@ -1,0 +1,28 @@
+# All values are supplied by Terraform (see ../../karpenter.tf).
+
+clusterName: ""
+
+nodeClass:
+  name: default
+  role: ""
+  amiAlias: al2023@latest
+  volumeSize: 50Gi
+  tags: {}
+
+# Map of NodePool name => settings. Intentionally empty here: Helm deep-merges
+# maps, so any pool defined in this file would always be created in addition to
+# the ones passed by Terraform. Shape (fields marked * are optional):
+#
+# nodePools:
+#   default:
+#     architectures: ["arm64", "amd64"]
+#     capacityTypes: ["spot", "on-demand"]
+#     instanceFamily: ["c", "m", "r"]
+#     generationGreaterThan: 5
+#     cpuLimit: 100
+#     memoryLimit: 400Gi
+#     expireAfter: 720h                               *  replace nodes after 30 days (new AMIs, patches)
+#     consolidationPolicy: WhenEmptyOrUnderutilized   *
+#     consolidateAfter: 1m                            *
+#     disruptionBudget: "10%"                         *  max share of nodes disrupted at once
+nodePools: {}

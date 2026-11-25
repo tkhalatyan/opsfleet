@@ -1,0 +1,41 @@
+apiVersion: karpenter.k8s.aws/v1
+kind: EC2NodeClass
+metadata:
+  name: {{ .Values.nodeClass.name }}
+spec:
+  # IAM role for the nodes (instance profile is managed by Karpenter).
+  role: {{ .Values.nodeClass.role | quote }}
+
+  # Karpenter resolves the matching EKS-optimised AMI per architecture,
+  # so the same node class serves both arm64 and amd64 nodes.
+  amiSelectorTerms:
+    - alias: {{ .Values.nodeClass.amiAlias | quote }}
+
+  subnetSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: {{ .Values.clusterName | quote }}
+
+  securityGroupSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: {{ .Values.clusterName | quote }}
+
+  # IMDSv2 only, and hop limit 1 so pods cannot reach the node's instance
+  # credentials (pods get their own AWS permissions via EKS Pod Identity).
+  metadataOptions:
+    httpEndpoint: enabled
+    httpProtocolIPv6: disabled
+    httpPutResponseHopLimit: 1
+    httpTokens: required
+
+  blockDeviceMappings:
+    - deviceName: /dev/xvda
+      ebs:
+        volumeSize: {{ .Values.nodeClass.volumeSize | default "50Gi" }}
+        volumeType: gp3
+        encrypted: true
+        deleteOnTermination: true
+
+  {{- with .Values.nodeClass.tags }}
+  tags:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}

@@ -1,0 +1,51 @@
+{{- range $name, $pool := .Values.nodePools }}
+---
+apiVersion: karpenter.sh/v1
+kind: NodePool
+metadata:
+  name: {{ $name }}
+spec:
+  template:
+    spec:
+      nodeClassRef:
+        group: karpenter.k8s.aws
+        kind: EC2NodeClass
+        name: {{ $.Values.nodeClass.name }}
+
+      requirements:
+        # Both values allowed: workloads choose with a nodeSelector on
+        # kubernetes.io/arch, otherwise Karpenter picks the cheapest option.
+        - key: kubernetes.io/arch
+          operator: In
+          values: {{ $pool.architectures | toJson }}
+        - key: kubernetes.io/os
+          operator: In
+          values: ["linux"]
+        # With spot and on-demand allowed, Karpenter prefers Spot and falls
+        # back to On-Demand when Spot capacity is unavailable.
+        - key: karpenter.sh/capacity-type
+          operator: In
+          values: {{ $pool.capacityTypes | toJson }}
+        - key: karpenter.k8s.aws/instance-category
+          operator: In
+          values: {{ $pool.instanceFamily | toJson }}
+        - key: karpenter.k8s.aws/instance-generation
+          operator: Gt
+          values: [{{ $pool.generationGreaterThan | toString | quote }}]
+        # Tiny instances waste capacity on per-node overhead (DaemonSets, ENI limits).
+        - key: karpenter.k8s.aws/instance-size
+          operator: NotIn
+          values: ["nano", "micro", "small"]
+
+      expireAfter: {{ $pool.expireAfter | default "720h" }}
+
+  limits:
+    cpu: {{ $pool.cpuLimit | quote }}
+    memory: {{ $pool.memoryLimit | quote }}
+
+  disruption:
+    consolidationPolicy: {{ $pool.consolidationPolicy | default "WhenEmptyOrUnderutilized" }}
+    consolidateAfter: {{ $pool.consolidateAfter | default "1m" }}
+    budgets:
+      - nodes: {{ $pool.disruptionBudget | default "10%" | quote }}
+{{- end }}

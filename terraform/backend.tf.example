@@ -1,0 +1,11 @@
+# Remote state for team use. Copy to backend.tf, create the bucket once
+# (versioning + encryption enabled), then run: terraform init -migrate-state
+terraform {
+  backend "s3" {
+    bucket       = "CHANGE-ME-terraform-state"
+    key          = "eks-karpenter-poc/terraform.tfstate"
+    region       = "us-east-1"
+    encrypt      = true
+    use_lockfile = true # native S3 locking, no DynamoDB table needed
+  }
+}

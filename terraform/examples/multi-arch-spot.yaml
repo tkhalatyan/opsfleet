@@ -1,0 +1,44 @@
+# No architecture pinned: Karpenter picks whatever is cheapest (usually Graviton Spot).
+# Requires a multi-arch image (linux/arm64 + linux/amd64), which busybox is.
+# Replicas are spread across AZs so one Spot reclaim or AZ issue cannot take them all.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-multi-arch
+  labels:
+    app: demo-multi-arch
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: demo-multi-arch
+  template:
+    metadata:
+      labels:
+        app: demo-multi-arch
+    spec:
+      nodeSelector:
+        karpenter.sh/capacity-type: spot
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: demo-multi-arch
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: app
+          image: public.ecr.aws/docker/library/busybox:stable
+          command: ["sh", "-c", "while true; do echo \"arch=$(uname -m) node=$NODE_NAME\"; sleep 30; done"]
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          resources:
+            requests:
+              cpu: 500m
+              memory: 256Mi
+            limits:
+              memory: 256Mi
